@@ -4,9 +4,10 @@ import com.emprestimosCaixa.backend.dto.input.SimulacaoRequest;
 import com.emprestimosCaixa.backend.dto.output.*;
 import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
 import com.emprestimosCaixa.backend.model.Produto;
-import com.emprestimosCaixa.backend.repository.ProdutoRepository;
-import com.emprestimosCaixa.backend.repository.SimulacaoLeituraRepository;
-import com.emprestimosCaixa.backend.repository.SimulacaoPersistenciaRepository;
+import com.emprestimosCaixa.backend.repository.primary.ProdutoRepository;
+// --- IMPORTAÇÕES CORRIGIDAS ---
+import com.emprestimosCaixa.backend.repository.secondary.SimulacaoLeituraRepository;
+import com.emprestimosCaixa.backend.repository.secondary.SimulacaoPersistenciaRepository;
 import com.emprestimosCaixa.backend.services.AmortizacaoService;
 import com.emprestimosCaixa.backend.services.SimulacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,13 @@ public class SimulacaoServiceImpl implements SimulacaoService {
     @Autowired
     private ProdutoRepository produtoRepository;
 
+    // --- INJEÇÕES DE DEPENDÊNCIA CORRIGIDAS ---
+    @Autowired
+    private SimulacaoLeituraRepository leituraRepository;
+
+    @Autowired
+    private SimulacaoPersistenciaRepository persistenciaRepository;
+
     @Autowired
     @Qualifier("sacService")
     private AmortizacaoService sacService;
@@ -34,13 +42,6 @@ public class SimulacaoServiceImpl implements SimulacaoService {
     @Autowired
     @Qualifier("priceService")
     private AmortizacaoService priceService;
-
-    // Injetamos as duas novas dependências de repositório separadas
-    @Autowired
-    private SimulacaoLeituraRepository leituraRepository;
-
-    @Autowired
-    private SimulacaoPersistenciaRepository persistenciaRepository;
 
     @Override
     public SimulacaoResponse simular(SimulacaoRequest request) {
@@ -70,7 +71,7 @@ public class SimulacaoServiceImpl implements SimulacaoService {
                 response
         );
 
-        // Usamos o repositório específico de persistência
+        // --- USO DO REPOSITÓRIO CORRIGIDO ---
         persistenciaRepository.persistir(dadosParaPersistir);
 
         return response;
@@ -78,11 +79,12 @@ public class SimulacaoServiceImpl implements SimulacaoService {
 
     @Override
     public List<SimulacaoResumoDTO> listarTodas() {
-        // Usamos o repositório específico de leitura
+        // --- USO DO REPOSITÓRIO CORRIGIDO ---
         List<SimulacaoCompletaDTO> listaCompleta = leituraRepository.lerTodas();
 
         return listaCompleta.stream()
                 .map(dadosCompletos -> {
+                    // Lógica para calcular o valor total das parcelas (exemplo usando SAC)
                     BigDecimal valorTotalParcelas = dadosCompletos.getResultado().getResultadoSimulacao()
                             .stream()
                             .filter(amortizacao -> "SAC".equalsIgnoreCase(amortizacao.getTipo()))

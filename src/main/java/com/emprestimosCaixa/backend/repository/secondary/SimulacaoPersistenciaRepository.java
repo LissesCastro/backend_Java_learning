@@ -1,4 +1,4 @@
-package com.emprestimosCaixa.backend.repository;
+package com.emprestimosCaixa.backend.repository.secondary;
 
 import com.emprestimosCaixa.backend.dto.output.SimulacaoCompletaDTO;
 

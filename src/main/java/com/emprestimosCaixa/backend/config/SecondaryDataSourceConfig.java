@@ -11,10 +11,13 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "com.emprestimosCaixa.backend.adapters.persistence.h2",
+        // --- CORREÇÃO PRINCIPAL APLICADA AQUI ---
+        // Agora, esta configuração só escaneia o pacote dos repositórios de simulação
+        basePackages = {"com.emprestimosCaixa.backend.repository.secondary", "com.emprestimosCaixa.backend.sqlite.repository"},
         entityManagerFactoryRef = "secondaryEntityManagerFactory",
         transactionManagerRef = "secondaryTransactionManager"
 )
@@ -34,11 +37,15 @@ public class SecondaryDataSourceConfig {
     @Bean(name = "secondaryEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean secondaryEntityManagerFactory(
             EntityManagerFactoryBuilder builder, DataSource secondaryDataSource) {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.hbm2ddl.auto", "update");
+        properties.put("hibernate.dialect", "org.hibernate.community.dialect.SQLiteDialect");
+
         return builder
                 .dataSource(secondaryDataSource)
-                .packages("com.emprestimosCaixa.backend.adapters.persistence.h2")
+                .packages("com.emprestimosCaixa.backend.sqlite.model") // Aponta para a entidade Simulacao
                 .persistenceUnit("secondary")
-                // As propriedades agora são lidas automaticamente do application.properties
+                .properties(properties)
                 .build();
     }
 

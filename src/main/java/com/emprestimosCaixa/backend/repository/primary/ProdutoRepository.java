@@ -1,4 +1,4 @@
-package com.emprestimosCaixa.backend.repository;
+package com.emprestimosCaixa.backend.repository.primary;
 
 import com.emprestimosCaixa.backend.model.Produto;
 import org.springframework.data.jpa.repository.JpaRepository;

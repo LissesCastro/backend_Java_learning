@@ -12,10 +12,12 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "com.emprestimosCaixa.backend.repository",
+        // Garante que esta configuração só escaneia este pacote
+        basePackages = "com.emprestimosCaixa.backend.repository.primary",
         entityManagerFactoryRef = "primaryEntityManagerFactory",
         transactionManagerRef = "primaryTransactionManager"
 )
@@ -36,20 +38,22 @@ public class PrimaryDataSourceConfig {
 
     @Primary
     @Bean(name = "primaryEntityManagerFactory")
-    public LocalContainerEntityManagerFactoryBean primaryEntityManagerFactory(
-            EntityManagerFactoryBuilder builder, DataSource primaryDataSource) {
+    public LocalContainerEntityManagerFactoryBean primaryEntityManagerFactory(EntityManagerFactoryBuilder builder, DataSource primaryDataSource) {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.hbm2ddl.auto", "validate");
+        properties.put("hibernate.physical_naming_strategy", "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl");
+
         return builder
                 .dataSource(primaryDataSource)
-                .packages("com.emprestimosCaixa.backend.model")
+                .packages("com.emprestimosCaixa.backend.model") // Aponta para a entidade Produto
                 .persistenceUnit("primary")
-                // As propriedades agora são lidas automaticamente do application.properties
+                .properties(properties)
                 .build();
     }
 
     @Primary
     @Bean(name = "primaryTransactionManager")
-    public PlatformTransactionManager primaryTransactionManager(
-            LocalContainerEntityManagerFactoryBean primaryEntityManagerFactory) {
+    public PlatformTransactionManager primaryTransactionManager(LocalContainerEntityManagerFactoryBean primaryEntityManagerFactory) {
         return new JpaTransactionManager(primaryEntityManagerFactory.getObject());
     }
 }

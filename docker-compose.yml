@@ -1,13 +1,8 @@
 version: '3.8'
 
 services:
-  # Aplicação
   app:
     container_name: springboot-app
     build: .
     ports:
       - "8080:8080"
-    volumes:
-      # Mapeamos a pasta 'simulacoes'
-      # arquivos JSON não se percam quando o contentor for removido.
-      - ./simulacoes:/simulacoes
