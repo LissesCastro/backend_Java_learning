@@ -1,5 +1,6 @@
-package com.emprestimosCaixa.backend.dto.output;
+package com.emprestimosCaixa.backend.dto.response;
 
+import com.emprestimosCaixa.backend.dto.output.AmortizacaoDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

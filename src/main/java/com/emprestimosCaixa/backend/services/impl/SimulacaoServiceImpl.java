@@ -2,13 +2,15 @@ package com.emprestimosCaixa.backend.services.impl;
 
 import com.emprestimosCaixa.backend.dto.input.SimulacaoRequest;
 import com.emprestimosCaixa.backend.dto.output.*;
+import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
 import com.emprestimosCaixa.backend.model.Produto;
 import com.emprestimosCaixa.backend.repository.ProdutoRepository;
-import com.emprestimosCaixa.backend.repository.SimulacaoRepository; // Importação atualizada
-import com.emprestimosCaixa.backend.services.PRICEService;
-import com.emprestimosCaixa.backend.services.SACService;
+import com.emprestimosCaixa.backend.repository.SimulacaoLeituraRepository;
+import com.emprestimosCaixa.backend.repository.SimulacaoPersistenciaRepository;
+import com.emprestimosCaixa.backend.services.AmortizacaoService;
 import com.emprestimosCaixa.backend.services.SimulacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,13 +28,19 @@ public class SimulacaoServiceImpl implements SimulacaoService {
     private ProdutoRepository produtoRepository;
 
     @Autowired
-    private SACService sacService;
+    @Qualifier("sacService")
+    private AmortizacaoService sacService;
 
     @Autowired
-    private PRICEService priceService;
+    @Qualifier("priceService")
+    private AmortizacaoService priceService;
+
+    // Injetamos as duas novas dependências de repositório separadas
+    @Autowired
+    private SimulacaoLeituraRepository leituraRepository;
 
     @Autowired
-    private SimulacaoRepository simulacaoRepository; // Injeção de dependência atualizada
+    private SimulacaoPersistenciaRepository persistenciaRepository;
 
     @Override
     public SimulacaoResponse simular(SimulacaoRequest request) {
@@ -62,14 +70,16 @@ public class SimulacaoServiceImpl implements SimulacaoService {
                 response
         );
 
-        simulacaoRepository.persistir(dadosParaPersistir); // Usando o novo repositório
+        // Usamos o repositório específico de persistência
+        persistenciaRepository.persistir(dadosParaPersistir);
 
         return response;
     }
 
     @Override
     public List<SimulacaoResumoDTO> listarTodas() {
-        List<SimulacaoCompletaDTO> listaCompleta = simulacaoRepository.lerTodas(); // Usando o novo repositório
+        // Usamos o repositório específico de leitura
+        List<SimulacaoCompletaDTO> listaCompleta = leituraRepository.lerTodas();
 
         return listaCompleta.stream()
                 .map(dadosCompletos -> {

@@ -1,7 +1,7 @@
 package com.emprestimosCaixa.backend.services.impl;
 
 import com.emprestimosCaixa.backend.dto.output.ParcelaDTO;
-import com.emprestimosCaixa.backend.services.SACService;
+import com.emprestimosCaixa.backend.services.AmortizacaoService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -9,8 +9,8 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
-public class SACServiceImpl implements SACService {
+@Service("sacService")
+public class SACServiceImpl implements AmortizacaoService {
 
     @Override
     public List<ParcelaDTO> calcularParcelas(BigDecimal valor, int prazo, BigDecimal taxaJuros) {

@@ -26,10 +26,10 @@ public class Produto {
     private BigDecimal pcTaxaJuros;
 
     @Column(name = "NU_MINIMO_MESES", nullable = false)
-    private int nuMinimoMeses;
+    private Short nuMinimoMeses;
 
     @Column(name = "NU_MAXIMO_MESES")
-    private Integer nuMaximoMeses;
+    private Short nuMaximoMeses;
 
     @Column(name = "VR_MINIMO", nullable = false, precision = 18, scale = 2)
     private BigDecimal vrMinimo;

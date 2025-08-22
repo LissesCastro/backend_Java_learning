@@ -1,5 +1,6 @@
 package com.emprestimosCaixa.backend.dto.output;
 
+import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
