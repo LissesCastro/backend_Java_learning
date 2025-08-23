@@ -4,36 +4,40 @@ import com.emprestimosCaixa.backend.dto.input.SimulacaoRequest;
 import com.emprestimosCaixa.backend.dto.output.*;
 import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
 import com.emprestimosCaixa.backend.model.Produto;
+import com.emprestimosCaixa.backend.mongo.model.SimulacaoSalva;
+import com.emprestimosCaixa.backend.mongo.repository.SimulacaoMongoRepository;
 import com.emprestimosCaixa.backend.repository.primary.ProdutoRepository;
-// --- IMPORTAÇÕES CORRIGIDAS ---
-import com.emprestimosCaixa.backend.repository.secondary.SimulacaoLeituraRepository;
-import com.emprestimosCaixa.backend.repository.secondary.SimulacaoPersistenciaRepository;
 import com.emprestimosCaixa.backend.services.AmortizacaoService;
 import com.emprestimosCaixa.backend.services.SimulacaoService;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ConvertOperators;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
 public class SimulacaoServiceImpl implements SimulacaoService {
 
-    private final AtomicInteger idSimulacaoGenerator = new AtomicInteger(1);
-
     @Autowired
     private ProdutoRepository produtoRepository;
 
-    // --- INJEÇÕES DE DEPENDÊNCIA CORRIGIDAS ---
     @Autowired
-    private SimulacaoLeituraRepository leituraRepository;
+    private SimulacaoMongoRepository simulacaoMongoRepository;
 
     @Autowired
-    private SimulacaoPersistenciaRepository persistenciaRepository;
+    private MongoTemplate mongoTemplate;
 
     @Autowired
     @Qualifier("sacService")
@@ -55,7 +59,11 @@ public class SimulacaoServiceImpl implements SimulacaoService {
         resultadoSimulacao.add(new AmortizacaoDTO("SAC", parcelasSAC));
         resultadoSimulacao.add(new AmortizacaoDTO("PRICE", parcelasPRICE));
 
-        int novoId = idSimulacaoGenerator.getAndIncrement();
+        int novoId;
+        Random random = new Random();
+        do {
+            novoId = 10000000 + random.nextInt(90000000);
+        } while (simulacaoMongoRepository.existsByResultado_IdSimulacao(novoId));
 
         SimulacaoResponse response = new SimulacaoResponse(
                 novoId,
@@ -65,26 +73,22 @@ public class SimulacaoServiceImpl implements SimulacaoService {
                 resultadoSimulacao
         );
 
-        SimulacaoCompletaDTO dadosParaPersistir = new SimulacaoCompletaDTO(
+        SimulacaoSalva dadosParaPersistir = new SimulacaoSalva(
                 request.getValorDesejado(),
                 request.getPrazo(),
                 response
         );
-
-        // --- USO DO REPOSITÓRIO CORRIGIDO ---
-        persistenciaRepository.persistir(dadosParaPersistir);
+        simulacaoMongoRepository.save(dadosParaPersistir);
 
         return response;
     }
 
     @Override
     public List<SimulacaoResumoDTO> listarTodas() {
-        // --- USO DO REPOSITÓRIO CORRIGIDO ---
-        List<SimulacaoCompletaDTO> listaCompleta = leituraRepository.lerTodas();
+        List<SimulacaoSalva> listaCompleta = simulacaoMongoRepository.findAll();
 
         return listaCompleta.stream()
                 .map(dadosCompletos -> {
-                    // Lógica para calcular o valor total das parcelas (exemplo usando SAC)
                     BigDecimal valorTotalParcelas = dadosCompletos.getResultado().getResultadoSimulacao()
                             .stream()
                             .filter(amortizacao -> "SAC".equalsIgnoreCase(amortizacao.getTipo()))
@@ -102,5 +106,58 @@ public class SimulacaoServiceImpl implements SimulacaoService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public VolumeSimuladoDiaDTO getVolumeSimuladoPorDia(LocalDate data, Optional<Integer> codigoProduto) {
+        Criteria criteria = Criteria.where("dataSimulacao")
+                .gte(data.atStartOfDay())
+                .lt(data.plusDays(1).atStartOfDay());
+
+        if (codigoProduto.isPresent()) {
+            criteria.and("resultado.codigoProduto").is(codigoProduto.get());
+        }
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                // 1. Filtrar os documentos pela data e produto (opcional)
+                Aggregation.match(criteria),
+
+                // 2. Adicionar um campo para o valor desejado convertido para double
+                Aggregation.addFields().addField("valorDesejadoNumerico")
+                        .withValue(ConvertOperators.ToDouble.toDouble("$valorDesejado")).build(),
+
+                // 3. Desdobrar o array de sistemas de amortização (SAC, PRICE)
+                Aggregation.unwind("resultado.resultadoSimulacao"),
+
+                // 4. Desdobrar o array de parcelas de cada sistema
+                Aggregation.unwind("resultado.resultadoSimulacao.parcelas"),
+
+                // 5. Adicionar campos para os valores das parcelas convertidos para double
+                Aggregation.addFields()
+                        .addField("valorPrestacaoNumerico")
+                        .withValue(ConvertOperators.ToDouble.toDouble("$resultado.resultadoSimulacao.parcelas.valorPrestacao"))
+                        .addField("taxaJurosNumerica")
+                        .withValue(ConvertOperators.ToDouble.toDouble("$resultado.taxaJuros"))
+                        .build(),
+
+                // 6. Agrupar por produto e calcular as métricas
+                Aggregation.group("resultado.codigoProduto", "resultado.descricaoProduto")
+                        .sum("valorDesejadoNumerico").as("valorTotalDesejado")
+                        .avg("taxaJurosNumerica").as("taxaMediaJuros")
+                        .sum("valorPrestacaoNumerico").as("valorTotalCredito")
+                        .avg("valorPrestacaoNumerico").as("valorMedioPrestacao"),
+
+                // 7. Remodelar a saída para corresponder ao DTO
+                Aggregation.project("valorTotalDesejado", "taxaMediaJuros", "valorTotalCredito", "valorMedioPrestacao")
+                        .and("_id.codigoProduto").as("codigoProduto")
+                        .and("_id.descricaoProduto").as("descricaoProduto")
+                        .andExclude("_id")
+        );
+
+        AggregationResults<ResumoProdutosDTO> results = mongoTemplate.aggregate(
+                aggregation, "simulacoes", ResumoProdutosDTO.class
+        );
+
+        return new VolumeSimuladoDiaDTO(data, results.getMappedResults());
     }
 }
