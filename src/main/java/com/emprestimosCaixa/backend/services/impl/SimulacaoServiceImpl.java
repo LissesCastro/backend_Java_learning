@@ -8,6 +8,7 @@ import com.emprestimosCaixa.backend.mongo.model.SimulacaoSalva;
 import com.emprestimosCaixa.backend.mongo.repository.SimulacaoMongoRepository;
 import com.emprestimosCaixa.backend.repository.primary.ProdutoRepository;
 import com.emprestimosCaixa.backend.services.AmortizacaoService;
+import com.emprestimosCaixa.backend.services.EventHubService;
 import com.emprestimosCaixa.backend.services.SimulacaoService;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ public class SimulacaoServiceImpl implements SimulacaoService {
     @Qualifier("priceService")
     private AmortizacaoService priceService;
 
+    @Autowired
+    private EventHubService eventHubService;
+
     @Override
     public SimulacaoResponse simular(SimulacaoRequest request) {
         Produto produto = produtoRepository.findProdutoByValorAndPrazo(request.getValorDesejado(), request.getPrazo())
@@ -79,6 +83,7 @@ public class SimulacaoServiceImpl implements SimulacaoService {
                 response
         );
         simulacaoMongoRepository.save(dadosParaPersistir);
+        eventHubService.sendEvent(response);
 
         return response;
     }
