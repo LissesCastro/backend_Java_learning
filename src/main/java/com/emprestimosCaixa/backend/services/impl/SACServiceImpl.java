@@ -1,7 +1,7 @@
 package com.emprestimosCaixa.backend.services.impl;
 
-import com.emprestimosCaixa.backend.dto.output.ParcelaDTO;
 import com.emprestimosCaixa.backend.services.AmortizacaoService;
+import com.emprestimosCaixa.backend.shared.dto.output.ParcelaDTO;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;

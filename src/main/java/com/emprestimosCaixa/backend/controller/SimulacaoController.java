@@ -1,16 +1,14 @@
-package com.emprestimosCaixa.backend.controller;
+package com.emprestimosCaixa.backend.infrastructure.web.controller;
 
-import com.emprestimosCaixa.backend.dto.input.SimulacaoRequest;
-import com.emprestimosCaixa.backend.dto.output.VolumeSimuladoDiaDTO;
-import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
-import com.emprestimosCaixa.backend.dto.output.SimulacaoResumoDTO;
 import com.emprestimosCaixa.backend.services.SimulacaoService;
+import com.emprestimosCaixa.backend.shared.dto.input.SimulacaoRequest;
+import com.emprestimosCaixa.backend.shared.dto.output.VolumeSimuladoDiaDTO;
+import com.emprestimosCaixa.backend.shared.dto.response.SimulacaoResponse;
+import com.emprestimosCaixa.backend.shared.dto.output.SimulacaoResumoDTO;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,27 +18,29 @@ import java.util.Optional;
 @RequestMapping("/simulacoes")
 public class SimulacaoController {
 
-        @Autowired
-        private SimulacaoService simulacaoService;
+    private final SimulacaoService simulacaoService;
 
-        @PostMapping
-        public ResponseEntity<SimulacaoResponse> simular(@Valid @RequestBody SimulacaoRequest request) {
-            SimulacaoResponse response = simulacaoService.simular(request);
-            return ResponseEntity.ok(response);
-        }
+    public SimulacaoController(SimulacaoService simulacaoService) {
+        this.simulacaoService = simulacaoService;
+    }
 
-        @GetMapping
-        public ResponseEntity<List<SimulacaoResumoDTO>> listar() {
-            return ResponseEntity.ok(simulacaoService.listarTodas());
-        }
+    @PostMapping
+    public ResponseEntity<SimulacaoResponse> simular(@Valid @RequestBody SimulacaoRequest request) {
+        SimulacaoResponse response = simulacaoService.simular(request);
+        return ResponseEntity.ok(response);
+    }
 
-        @GetMapping("/volume-diario")
-        public ResponseEntity<VolumeSimuladoDiaDTO> getVolumeDiario(
-                @RequestParam("data") @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate data,
-                @RequestParam(value = "produto", required = false) Optional<Integer> codigoProduto) {
+    @GetMapping
+    public ResponseEntity<List<SimulacaoResumoDTO>> listar() {
+        return ResponseEntity.ok(simulacaoService.listarTodas());
+    }
 
-            VolumeSimuladoDiaDTO volume = simulacaoService.getVolumeSimuladoPorDia(data, codigoProduto);
-            return ResponseEntity.ok(volume);
-        }
+    @GetMapping("/volume-diario")
+    public ResponseEntity<VolumeSimuladoDiaDTO> getVolumeDiario(
+            @RequestParam("data") @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate data,
+            @RequestParam(value = "produto", required = false) Optional<Integer> codigoProduto) {
 
+        VolumeSimuladoDiaDTO volume = simulacaoService.getVolumeSimuladoPorDia(data, codigoProduto);
+        return ResponseEntity.ok(volume);
+    }
 }

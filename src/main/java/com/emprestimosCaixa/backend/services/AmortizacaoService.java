@@ -1,6 +1,6 @@
 package com.emprestimosCaixa.backend.services;
 
-import com.emprestimosCaixa.backend.dto.output.ParcelaDTO;
+import com.emprestimosCaixa.backend.shared.dto.output.ParcelaDTO;
 import java.math.BigDecimal;
 import java.util.List;
 
