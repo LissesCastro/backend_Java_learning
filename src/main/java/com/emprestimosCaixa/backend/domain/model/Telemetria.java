@@ -1,4 +1,4 @@
-package com.emprestimosCaixa.backend.mongo.model;
+package com.emprestimosCaixa.backend.domain.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @Document(collection = "telemetria")
-public class TelemetriaRequisicao {
+public class Telemetria {
 
     @Id
     private String id;
@@ -19,13 +19,13 @@ public class TelemetriaRequisicao {
     private String endpoint;
     private String metodoHttp;
     private LocalDateTime dataHoraRequisicao;
-    private long tempoResposta; // em milissegundos
+    private long tempoResposta;
     private int statusHttp;
-    private boolean sucesso; // true se status 200-299
-    private String errorMessage; // se houver erro
+    private boolean sucesso;
+    private String errorMessage;
 
-    public TelemetriaRequisicao(String nomeApi, String endpoint, String metodoHttp,
-                                long tempoResposta, int statusHttp, String errorMessage) {
+    public Telemetria(String nomeApi, String endpoint, String metodoHttp,
+                      long tempoResposta, int statusHttp, String errorMessage) {
         this.nomeApi = nomeApi;
         this.endpoint = endpoint;
         this.metodoHttp = metodoHttp;

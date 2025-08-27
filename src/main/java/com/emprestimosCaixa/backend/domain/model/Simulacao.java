@@ -1,6 +1,6 @@
-package com.emprestimosCaixa.backend.mongo.model;
+package com.emprestimosCaixa.backend.domain.model;
 
-import com.emprestimosCaixa.backend.dto.response.SimulacaoResponse;
+import com.emprestimosCaixa.backend.shared.dto.response.SimulacaoResponse;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -8,23 +8,18 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@Document(collection = "simulacoes") // Nome da "tabela" (collection) no MongoDB
-public class SimulacaoSalva {
+@Document(collection = "simulacoes")
+public class Simulacao {
 
     @Id
-    private String id; // O ID no MongoDB é uma String
+    private String id;
 
-    // Dados da requisição original
     private BigDecimal valorDesejado;
     private int prazo;
-
-    // Resposta completa da simulação
     private SimulacaoResponse resultado;
-
-    // Data da simulação
     private LocalDateTime dataSimulacao;
 
-    public SimulacaoSalva(BigDecimal valorDesejado, int prazo, SimulacaoResponse resultado) {
+    public Simulacao(BigDecimal valorDesejado, int prazo, SimulacaoResponse resultado) {
         this.valorDesejado = valorDesejado;
         this.prazo = prazo;
         this.resultado = resultado;
